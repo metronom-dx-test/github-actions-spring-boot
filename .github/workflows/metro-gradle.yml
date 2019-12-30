@@ -53,7 +53,7 @@ jobs:
       uses: actions/checkout@master
 
   gcloud_authentication:
-    name: Build Binary and store it in cache
+    name: Authenticate with Google Cloud SDK
     runs-on: ubuntu-latest
     steps:
     # Setup gcloud CLI
@@ -70,7 +70,7 @@ jobs:
         gcloud auth configure-docker
 
   build_and_push_docker_container:
-    name: Build Binary and store it in cache
+    name: Create and push Docker container
     runs-on: ubuntu-latest
     needs: [build_and_push_java_artifact, gcloud_authentication]
     steps:
@@ -92,7 +92,7 @@ jobs:
         docker push gcr.io/$GKE_PROJECT/$IMAGE:$GITHUB_SHA
 
   create_or_update_kubernetes_deployment:
-    name: Setup, Build, Publish, and Deploy
+    name: Deploy to Kubernetes
     runs-on: ubuntu-latest
     needs: gcloud_authentication
     steps:
