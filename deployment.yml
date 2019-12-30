@@ -1,0 +1,26 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: github-actions-spring-boot
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  minReadySeconds: 5
+  template:
+    metadata:
+      labels:
+        app: github-actions-spring-boot
+    spec:
+      containers:
+        - name: github-actions-spring-boot
+          image: gcr.io/metro-op-2tier-internal/github-actions-spring-boot@sha256:3f7df22fb4bc801bcd535b0741606bd6569102c20f58b4ef5f54ab3822890139
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: 500m
+            limits:
+              cpu: 500m
