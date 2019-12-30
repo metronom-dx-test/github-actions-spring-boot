@@ -14,7 +14,9 @@ on:
   push:
     branches:
     - master
-
+  pull_request:
+    branches:
+      - master
 # Environment variables available to all jobs and steps in this workflow
 env:
   GKE_PROJECT: ${{ secrets.GKE_PROJECT }}
@@ -25,15 +27,18 @@ env:
   GITHUB_SHA: ${{ github.sha }}
 
 jobs:
-  setup-build-publish-deploy:
-    name: Setup, Build, Publish, and Deploy
+  build_and_push_java_artifact:
+    name: Build Binary and store it in cache
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [ 'openjdk8', 'openjdk11', 'openjdk13' ]
     steps:
     - uses: actions/checkout@v1
-    - name: Set up JDK 1.8
-      uses: actions/setup-java@v1
+    - name: Set up ${{ matrix.java }}
+      uses: actions/setup-jdk@v1
       with:
-        java-version: 1.8
+        java-version: ${{ matrix.java }}
     - name: Build with Gradle
       run: ./gradlew build
 
@@ -46,6 +51,10 @@ jobs:
     - name: Checkout
       uses: actions/checkout@master
 
+  gcloud_authentication:
+    name: Build Binary and store it in cache
+    runs-on: ubuntu-latest
+    steps:
     # Setup gcloud CLI
     - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
       with:
@@ -53,12 +62,17 @@ jobs:
         service_account_email: ${{ secrets.GKE_EMAIL }}
         service_account_key: ${{ secrets.GKE_KEY }}
 
-    # Configure docker to use the gcloud command-line tool as a credential helper
+      # Configure docker to use the gcloud command-line tool as a credential helper
     - run: |
         # Set up docker to authenticate
         # via gcloud command-line tool.
         gcloud auth configure-docker
 
+  build_and_push_docker_container:
+    name: Build Binary and store it in cache
+    runs-on: ubuntu-latest
+    needs: [build_and_push_java_artifact, gcloud_authentication]
+    steps:
     - name: Download artifact from cache
       uses: actions/download-artifact@v1
       with:
@@ -66,7 +80,7 @@ jobs:
 
     # Build the Docker image
     - name: Build
-      run: |        
+      run: |
         docker build -t gcr.io/"$GKE_PROJECT"/"$IMAGE":"$GITHUB_SHA" \
           --build-arg GITHUB_SHA="$GITHUB_SHA" \
           --build-arg GITHUB_REF="$GITHUB_REF" .
@@ -75,7 +89,12 @@ jobs:
     - name: Publish
       run: |
         docker push gcr.io/$GKE_PROJECT/$IMAGE:$GITHUB_SHA
-        
+
+  create_or_update_kubernetes_deployment:
+    name: Setup, Build, Publish, and Deploy
+    runs-on: ubuntu-latest
+    needs: gcloud_authentication
+    steps:
     # Set up kustomize
     - name: Set up Kustomize
       run: |
