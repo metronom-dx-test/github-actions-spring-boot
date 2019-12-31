@@ -35,7 +35,7 @@ jobs:
         java: [ '8', '11.0.3', '13' ]
     steps:
     - name: Use public selfwritten action
-      uses: robinnepomukmai/demo-action
+      uses: robinnepomukmai/demo-action@master
       with:
         who-to-greet: 'Metronom'
 
