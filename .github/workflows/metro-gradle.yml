@@ -54,7 +54,7 @@ jobs:
     - name: Upload build artifact
       uses: actions/upload-artifact@v1
       with:
-        name: artifact
+        name: artifact_${{ matrix.java }}
         path: build/libs/demo-0.0.1-SNAPSHOT.jar
 
   deploy_container:
@@ -79,7 +79,7 @@ jobs:
     - name: Download artifact from cache
       uses: actions/download-artifact@v1
       with:
-        name: artifact
+        name: artifact_${{ matrix.java }}
 
     # Build the Docker image
     - name: Build
