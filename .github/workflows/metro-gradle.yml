@@ -79,7 +79,7 @@ jobs:
     - name: Download artifact from cache
       uses: actions/download-artifact@v1
       with:
-        name: artifact_${{ matrix.java }}
+        name: artifact_8
 
     # Build the Docker image
     - name: Build
